@@ -1,401 +1,1190 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Kola's Gaming Cafe Admin</title>
+  <title>Kola's Gaming Cafe - Admin</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase JavaScript library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<style>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-body{
-font-family:Arial,sans-serif;
-background:#f4f6f8;
-padding:20px;
-}
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
 
-.container{
-max-width:1000px;
-margin:auto;
-background:white;
-padding:25px;
-border-radius:15px;
-box-shadow:0 5px 20px rgba(0,0,0,0.1);
-}
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+    }
 
-h1,h2{
-text-align:center;
-}
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
 
-input,button{
-padding:10px;
-border-radius:8px;
-border:1px solid #ccc;
-}
+    h2 {
+      margin-top: 35px;
+    }
 
-button{
-cursor:pointer;
-background:#161b22;
-color:white;
-}
+    .login {
+      max-width: 350px;
+      margin: 40px auto;
+      text-align: center;
+    }
 
-.login{
-text-align:center;
-}
+    input {
+      width: 100%;
+      padding: 13px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
 
-.summary{
-background:#f1f3f5;
-padding:15px;
-border-radius:10px;
-margin:20px 0;
-font-size:18px;
-}
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: #161b22;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 3px;
+    }
 
-table{
-width:100%;
-border-collapse:collapse;
-}
+    button:hover {
+      opacity: 0.85;
+    }
 
-th,td{
-border:1px solid #ddd;
-padding:10px;
-text-align:center;
-}
+    .login-button {
+      width: 100%;
+      padding: 13px;
+      font-size: 16px;
+    }
 
-th{
-background:#161b22;
-color:white;
-}
+    .summary {
+      background: #f1f3f5;
+      padding: 18px;
+      border-radius: 12px;
+      margin: 20px 0;
+      font-size: 18px;
+      line-height: 1.8;
+    }
 
-.whatsapp{
-background:#25D366;
-}
+    .message {
+      display: none;
+      padding: 14px;
+      border-radius: 10px;
+      margin: 15px 0;
+    }
 
-.status{
-margin:3px;
-font-size:12px;
-}
+    .success {
+      background: #e8f7ed;
+      color: #155724;
+    }
 
-.cancel{
-background:#d9534f;
-}
+    .error {
+      background: #ffe8e8;
+      color: #8a1f1f;
+    }
 
-</style>
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
 
+    table {
+      width: 100%;
+      min-width: 800px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #161b22;
+      color: white;
+    }
+
+    .whatsapp {
+      display: inline-block;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #25d366;
+      color: white;
+      text-decoration: none;
+      margin: 3px;
+    }
+
+    .arrived {
+      background: #198754;
+    }
+
+    .playing {
+      background: #0d6efd;
+    }
+
+    .completed {
+      background: #6f42c1;
+    }
+
+    .cancel {
+      background: #dc3545;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      background: #e9ecef;
+    }
+
+    .status-cancelled {
+      background: #f8d7da;
+    }
+
+    .status-completed {
+      background: #d1e7dd;
+    }
+
+    .status-playing {
+      background: #cfe2ff;
+    }
+
+    .status-arrived {
+      background: #d1e7dd;
+    }
+
+    .refresh-button {
+      float: right;
+      margin-top: -45px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .refresh-button {
+        float: none;
+        margin: 0 0 10px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
 
-<h1>🎮 Kola's Gaming Cafe</h1>
+    <h1>🎮 Kola's Gaming Cafe</h1>
 
+    <!-- LOGIN SECTION -->
+    <div id="loginBox" class="login">
 
-<div id="loginBox" class="login">
+      <h2>Owner Login</h2>
 
-<h3>Owner Login</h3>
+      <input
+        type="password"
+        id="password"
+        placeholder="Enter owner password"
+      >
 
-<input type="password" id="password" placeholder="Password">
+      <button
+        class="login-button"
+        onclick="login()"
+      >
+        Login
+      </button>
 
-<button onclick="login()">Login</button>
+      <div
+        id="loginMessage"
+        class="message"
+      ></div>
 
-</div>
-
-
-
-<div id="dashboard" style="display:none;">
-
-
-<div class="summary" id="summary">
-Loading...
-</div>
-
-
-<h2>Today's Bookings</h2>
-
-
-<table>
-
-<thead>
-<tr>
-<th>Time</th>
-<th>Name</th>
-<th>Phone</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
-
-<tbody id="todayList"></tbody>
-
-</table>
+    </div>
 
 
+    <!-- ADMIN DASHBOARD -->
+    <div
+      id="dashboard"
+      style="display: none;"
+    >
 
-<h2>All Bookings</h2>
+      <button
+        class="refresh-button"
+        onclick="loadBookings()"
+      >
+        Refresh
+      </button>
+
+      <div
+        id="message"
+        class="message"
+      ></div>
+
+      <div
+        id="summary"
+        class="summary"
+      >
+        Loading bookings...
+      </div>
 
 
-<table>
+      <h2>Today's Bookings</h2>
 
-<thead>
-<tr>
-<th>Date</th>
-<th>Time</th>
-<th>Name</th>
-<th>Phone</th>
-<th>Status</th>
-</tr>
-</thead>
+      <div class="table-container">
 
-<tbody id="allList"></tbody>
+        <table>
 
-</table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody id="todayList">
+          </tbody>
+
+        </table>
+
+      </div>
 
 
-</div>
+      <h2>All Bookings</h2>
 
+      <div class="table-container">
 
-</div>
+        <table>
 
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody id="allList">
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
 
 
 <script>
 
+  /*
+    SUPABASE SETTINGS
+  */
 
-const SUPABASE_URL =
-"https://kjmovuvkfpqxbpgjscxb.supabase.co";
+  const SUPABASE_URL =
+    "https://kjmovuvkfpqxbpgjscxb.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_jIkmH9FJEJ3ITWovdQvYmw_IDSkSeT2";
 
 
-const SUPABASE_KEY =
-"sb_publishable_jIkmH9FJEJ3ITWovdQvYmw_IDSkSeT2";
+  /*
+    IMPORTANT:
+    Replace CHANGE_ME with your own admin password.
+  */
+
+  const ADMIN_PASSWORD =
+    "phani";
 
 
-const db =
-window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY,
-{
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false
+  /*
+    CREATE SUPABASE CLIENT
+
+    The explicit apikey header is included to fix:
+    "No API key found in request"
+  */
+
+  const db =
+    window.supabase.createClient(
+
+      SUPABASE_URL,
+
+      SUPABASE_KEY,
+
+      {
+        global: {
+          headers: {
+            apikey: SUPABASE_KEY
+          }
+        },
+
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      }
+
+    );
+
+
+  /*
+    LOGIN
+  */
+
+  function login() {
+
+    const enteredPassword =
+      document
+        .getElementById("password")
+        .value;
+
+    if (
+      enteredPassword ===
+      ADMIN_PASSWORD
+    ) {
+
+      document
+        .getElementById("loginBox")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("dashboard")
+        .style.display =
+        "block";
+
+      loadBookings();
+
+    }
+
+    else {
+
+      showLoginMessage(
+        "Wrong password.",
+        "error"
+      );
+
+    }
+
   }
-}
-);
 
 
+  /*
+    ALLOW ENTER KEY TO LOGIN
+  */
 
-const ADMIN_PASSWORD =
-"phani";
+  document
+    .getElementById("password")
+    .addEventListener(
+      "keydown",
+      function(event) {
 
+        if (
+          event.key === "Enter"
+        ) {
 
+          login();
 
-function login(){
+        }
 
-let p =
-document.getElementById("password").value;
+      }
+    );
 
 
-if(p===ADMIN_PASSWORD){
+  /*
+    LOAD BOOKINGS
+  */
 
-document.getElementById("loginBox").style.display="none";
+  async function loadBookings() {
 
-document.getElementById("dashboard").style.display="block";
+    showMessage(
+      "Loading bookings...",
+      "success"
+    );
 
-loadBookings();
 
-}
+    const {
+      data,
+      error
+    } = await db
 
-else{
+      .from("bookings")
 
-alert("Wrong password");
+      .select("*")
 
-}
+      .order(
+        "booking_date",
+        {
+          ascending: true
+        }
+      )
 
-}
+      .order(
+        "booking_time",
+        {
+          ascending: true
+        }
+      );
 
 
+    if (error) {
 
-async function loadBookings(){
+      console.error(
+        "Load error:",
+        error
+      );
 
+      showMessage(
+        "Unable to load bookings: " +
+        escapeHtml(
+          error.message
+        ),
+        "error"
+      );
 
-const {data,error}=await db
-.from("bookings")
-.select("*")
-.order("booking_date")
-.order("booking_time");
+      return;
 
+    }
 
 
-if(error){
+    const today =
+      getLocalDate();
 
-alert(error.message);
 
-return;
+    const todayBookings =
+      data.filter(
+        booking =>
+          booking.booking_date ===
+          today
+      );
 
-}
 
+    const activeTodayBookings =
+      todayBookings.filter(
+        booking =>
+          booking.status !==
+          "Cancelled"
+      );
 
 
-let today =
-new Date()
-.toISOString()
-.split("T")[0];
+    const todayRevenue =
+      activeTodayBookings.length *
+      150;
 
 
+    document
+      .getElementById("summary")
+      .innerHTML =
 
-let todayBookings =
-data.filter(x =>
-x.booking_date===today
-);
+      `
+      <strong>Today's date:</strong>
+      ${formatDate(today)}
+      <br>
 
+      <strong>Today's bookings:</strong>
+      ${todayBookings.length}
+      <br>
 
+      <strong>Active bookings:</strong>
+      ${activeTodayBookings.length}
+      <br>
 
-let revenue =
-todayBookings
-.filter(x =>
-x.status!=="Cancelled"
-)
-.length * 150;
+      <strong>Today's expected revenue:</strong>
+      ₹${todayRevenue}
+      `;
 
 
+    renderTodayBookings(
+      todayBookings
+    );
 
-document.getElementById("summary").innerHTML=
-`
-Today's bookings: <b>${todayBookings.length}</b><br>
-Today's expected revenue: <b>₹${revenue}</b>
-`;
 
+    renderAllBookings(
+      data
+    );
 
 
-let todayHTML="";
+    showMessage(
+      "Bookings loaded successfully.",
+      "success"
+    );
 
+  }
 
-todayBookings.forEach(b=>{
 
+  /*
+    SHOW TODAY'S BOOKINGS
+  */
 
-todayHTML+=`
+  function renderTodayBookings(
+    bookings
+  ) {
 
-<tr>
+    const todayList =
+      document
+        .getElementById(
+          "todayList"
+        );
 
-<td>${b.booking_time}</td>
 
-<td>${b.customer_name}</td>
+    if (
+      bookings.length === 0
+    ) {
 
-<td>${b.phone}</td>
+      todayList.innerHTML =
 
-<td>${b.status}</td>
+        `
+        <tr>
+          <td
+            colspan="5"
+          >
+            No bookings today.
+          </td>
+        </tr>
+        `;
 
-<td>
+      return;
+
+    }
+
+
+    let html = "";
+
+
+    bookings.forEach(
+      booking => {
+
+        const phone =
+          String(
+            booking.phone
+          )
+          .replace(
+            /\D/g,
+            ""
+          );
+
+
+        const whatsappMessage =
+          encodeURIComponent(
+
+            `Hello ${booking.customer_name}, this is Kola's Gaming Cafe. Your gaming booking is for ${formatDate(booking.booking_date)} from ${booking.booking_time}.`
+
+          );
+
+
+        html +=
+
+        `
+        <tr>
+
+          <td>
+            ${escapeHtml(
+              booking.booking_time
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              booking.customer_name
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              phone
+            )}
+          </td>
+
+          <td>
+            <span
+              class="
+              status
+              ${statusClass(
+                booking.status
+              )}
+              "
+            >
+              ${escapeHtml(
+                booking.status ||
+                "Booked"
+              )}
+            </span>
+          </td>
+
+          <td>
+
+            <a
+              class="whatsapp"
+              href="https://wa.me/91${phone}?text=${whatsappMessage}"
+              target="_blank"
+              rel="noopener"
+            >
+              WhatsApp
+            </a>
+
+            <br>
 
-<a class="whatsapp button"
-href="https://wa.me/91${b.phone}"
-target="_blank">
-WhatsApp
-</a>
+            <button
+              class="arrived"
+              onclick="
+              updateStatus(
+                ${booking.id},
+                'Arrived'
+              )
+              "
+            >
+              Arrived
+            </button>
 
-<br>
+            <button
+              class="playing"
+              onclick="
+              updateStatus(
+                ${booking.id},
+                'Playing'
+              )
+              "
+            >
+              Playing
+            </button>
 
-<button onclick="updateStatus(${b.id},'Arrived')">
-Arrived
-</button>
+            <button
+              class="completed"
+              onclick="
+              updateStatus(
+                ${booking.id},
+                'Completed'
+              )
+              "
+            >
+              Done
+            </button>
+
+            <button
+              class="cancel"
+              onclick="
+              updateStatus(
+                ${booking.id},
+                'Cancelled'
+              )
+              "
+            >
+              Cancel
+            </button>
+
+          </td>
+
+        </tr>
+        `;
+
+      }
+    );
+
+
+    todayList.innerHTML =
+      html;
+
+  }
+
+
+  /*
+    SHOW ALL BOOKINGS
+  */
+
+  function renderAllBookings(
+    bookings
+  ) {
+
+    const allList =
+      document
+        .getElementById(
+          "allList"
+        );
+
+
+    if (
+      bookings.length === 0
+    ) {
 
-<button onclick="updateStatus(${b.id},'Playing')">
-Playing
-</button>
+      allList.innerHTML =
 
-<button onclick="updateStatus(${b.id},'Completed')">
-Done
-</button>
+        `
+        <tr>
+          <td
+            colspan="5"
+          >
+            No bookings found.
+          </td>
+        </tr>
+        `;
 
-<button class="cancel"
-onclick="updateStatus(${b.id},'Cancelled')">
-Cancel
-</button>
+      return;
 
+    }
 
-</td>
 
-</tr>
+    let html = "";
 
-`;
 
-});
+    bookings.forEach(
+      booking => {
 
+        html +=
 
-document.getElementById("todayList").innerHTML=
-todayHTML || "<tr><td colspan='5'>No bookings today</td></tr>";
+        `
+        <tr>
 
+          <td>
+            ${formatDate(
+              booking.booking_date
+            )}
+          </td>
 
+          <td>
+            ${escapeHtml(
+              booking.booking_time
+            )}
+          </td>
 
-let allHTML="";
+          <td>
+            ${escapeHtml(
+              booking.customer_name
+            )}
+          </td>
 
+          <td>
+            ${escapeHtml(
+              String(
+                booking.phone
+              )
+            )}
+          </td>
 
-data.forEach(b=>{
+          <td>
+            <span
+              class="
+              status
+              ${statusClass(
+                booking.status
+              )}
+              "
+            >
+              ${escapeHtml(
+                booking.status ||
+                "Booked"
+              )}
+            </span>
+          </td>
 
+        </tr>
+        `;
 
-allHTML+=`
+      }
+    );
 
-<tr>
 
-<td>${b.booking_date}</td>
+    allList.innerHTML =
+      html;
 
-<td>${b.booking_time}</td>
+  }
 
-<td>${b.customer_name}</td>
 
-<td>${b.phone}</td>
+  /*
+    UPDATE BOOKING STATUS
+  */
 
-<td>${b.status}</td>
+  async function updateStatus(
+    id,
+    newStatus
+  ) {
 
-</tr>
+    const confirmed =
+      confirm(
 
-`;
+        `Change this booking status to "${newStatus}"?`
 
-});
+      );
 
 
-document.getElementById("allList").innerHTML=
-allHTML;
+    if (
+      !confirmed
+    ) {
 
+      return;
 
-}
+    }
 
 
+    showMessage(
 
-async function updateStatus(id,status){
+      "Updating booking status...",
 
+      "success"
 
-const {error}=await db
-.from("bookings")
-.update({
-status:status
-})
-.eq("id",id);
+    );
 
 
+    const {
+      data,
+      error
+    } = await db
 
-if(error){
+      .from("bookings")
 
-alert(error.message);
+      .update({
 
-return;
+        status:
+          newStatus
 
-}
+      })
 
+      .eq(
+        "id",
+        id
+      )
 
-loadBookings();
+      .select();
 
 
-}
+    if (error) {
 
+      console.error(
+
+        "Update error:",
+
+        error
+
+      );
+
+
+      showMessage(
+
+        "Status update failed: " +
+        escapeHtml(
+          error.message
+        ),
+
+        "error"
+
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      showMessage(
+
+        "No booking was updated. Please refresh and try again.",
+
+        "error"
+
+      );
+
+
+      return;
+
+    }
+
+
+    showMessage(
+
+      `Booking status changed to "${newStatus}".`,
+
+      "success"
+
+    );
+
+
+    await loadBookings();
+
+  }
+
+
+  /*
+    HELPER FUNCTIONS
+  */
+
+  function getLocalDate() {
+
+    const now =
+      new Date();
+
+
+    const year =
+      now.getFullYear();
+
+
+    const month =
+      String(
+        now.getMonth() + 1
+      )
+      .padStart(
+        2,
+        "0"
+      );
+
+
+    const day =
+      String(
+        now.getDate()
+      )
+      .padStart(
+        2,
+        "0"
+      );
+
+
+    return (
+      year +
+      "-" +
+      month +
+      "-" +
+      day
+    );
+
+  }
+
+
+  function formatDate(
+    dateValue
+  ) {
+
+    if (
+      !dateValue
+    ) {
+
+      return "";
+
+    }
+
+
+    const parts =
+      dateValue
+      .split("-");
+
+
+    if (
+      parts.length !== 3
+    ) {
+
+      return dateValue;
+
+    }
+
+
+    return (
+      parts[2] +
+      "-" +
+      parts[1] +
+      "-" +
+      parts[0]
+    );
+
+  }
+
+
+  function statusClass(
+    status
+  ) {
+
+    if (
+      status ===
+      "Cancelled"
+    ) {
+
+      return (
+        "status-cancelled"
+      );
+
+    }
+
+
+    if (
+      status ===
+      "Completed"
+    ) {
+
+      return (
+        "status-completed"
+      );
+
+    }
+
+
+    if (
+      status ===
+      "Playing"
+    ) {
+
+      return (
+        "status-playing"
+      );
+
+    }
+
+
+    if (
+      status ===
+      "Arrived"
+    ) {
+
+      return (
+        "status-arrived"
+      );
+
+    }
+
+
+    return "";
+
+  }
+
+
+  function showMessage(
+    text,
+    type
+  ) {
+
+    const message =
+      document
+        .getElementById(
+          "message"
+        );
+
+
+    message.innerHTML =
+      text;
+
+
+    message.className =
+      "message " +
+      type;
+
+
+    message.style.display =
+      "block";
+
+
+    if (
+      type ===
+      "success"
+    ) {
+
+      setTimeout(
+
+        function() {
+
+          message.style.display =
+            "none";
+
+        },
+
+        2500
+
+      );
+
+    }
+
+  }
+
+
+  function showLoginMessage(
+    text,
+    type
+  ) {
+
+    const message =
+      document
+        .getElementById(
+          "loginMessage"
+        );
+
+
+    message.innerHTML =
+      text;
+
+
+    message.className =
+      "message " +
+      type;
+
+
+    message.style.display =
+      "block";
+
+  }
+
+
+  function escapeHtml(
+    value
+  ) {
+
+    const element =
+      document.createElement(
+        "div"
+      );
+
+
+    element.textContent =
+      value ??
+      "";
+
+
+    return (
+      element.innerHTML
+    );
+
+  }
 
 </script>
 
-
 </body>
-
 </html>
+```
