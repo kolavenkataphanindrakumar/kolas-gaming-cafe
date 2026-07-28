@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kola's Gaming Cafe - Admin</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    background:#f4f6f8;
+    padding:20px;
+}
+
+.container {
+    max-width:900px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align:center;
+}
+
+input, button {
+    padding:12px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+
+button {
+    cursor:pointer;
+    background:#161b22;
+    color:white;
+}
+
+.login {
+    text-align:center;
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th, td {
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+
+th {
+    background:#161b22;
+    color:white;
+}
+
+.delete {
+    background:#d9534f;
+}
+
+.summary {
+    margin-top:20px;
+    padding:15px;
+    background:#f1f3f5;
+    border-radius:10px;
+    font-size:18px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<h1>🎮 Kola's Gaming Cafe</h1>
+
+
+<div class="login" id="loginBox">
+
+<h3>Owner Login</h3>
+
+<input type="password" id="password" placeholder="Enter password">
+
+<button onclick="login()">
+Login
+</button>
+
+</div>
+
+
+
+<div id="dashboard" style="display:none;">
+
+
+<h2>Bookings</h2>
+
+
+<div class="summary" id="summary">
+Loading...
+</div>
+
+
+<table>
+
+<thead>
+
+<tr>
+<th>Date</th>
+<th>Time</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+
+<tbody id="bookingList">
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
+
+
+<script>
+
+
+const SUPABASE_URL =
+"https://kjmovuvkfpqxbpgjscxb.supabase.co";
+
+
+const SUPABASE_KEY =
+"sb_publishable_jIkmH9FJEJ3ITWovdQvYmw_IDSkSeT2";
+
+
+const supabaseClient =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+
+
+const ADMIN_PASSWORD =
+"phani";
+
+
+
+function login(){
+
+const entered =
+document.getElementById("password").value;
+
+
+if(entered === ADMIN_PASSWORD){
+
+document.getElementById("loginBox").style.display="none";
+
+document.getElementById("dashboard").style.display="block";
+
+loadBookings();
+
+}
+
+else{
+
+alert("Wrong password");
+
+}
+
+}
+
+
+
+
+async function loadBookings(){
+
+
+const {data,error} =
+await supabaseClient
+.from("bookings")
+.select("*")
+.order("booking_date",{ascending:true})
+.order("booking_time",{ascending:true});
+
+
+
+if(error){
+
+alert("Unable to load bookings");
+
+console.log(error);
+
+return;
+
+}
+
+
+
+const table =
+document.getElementById("bookingList");
+
+
+table.innerHTML="";
+
+
+
+let total = 0;
+
+
+
+data.forEach(booking=>{
+
+
+total += 150;
+
+
+let row =
+document.createElement("tr");
+
+
+
+row.innerHTML = `
+
+<td>${booking.booking_date}</td>
+
+<td>${booking.booking_time}</td>
+
+<td>${booking.customer_name}</td>
+
+<td>${booking.phone}</td>
+
+<td>
+<button class="delete"
+onclick="deleteBooking(${booking.id})">
+Delete
+</button>
+</td>
+
+`;
+
+
+
+table.appendChild(row);
+
+
+
+});
+
+
+
+document.getElementById("summary").innerHTML =
+`
+Total bookings: <b>${data.length}</b><br>
+Expected revenue: <b>₹${total}</b>
+`;
+
+}
+
+
+
+
+async function deleteBooking(id){
+
+
+if(!confirm("Cancel this booking?"))
+return;
+
+
+
+const {error} =
+await supabaseClient
+.from("bookings")
+.delete()
+.eq("id",id);
+
+
+
+if(error){
+
+alert("Delete failed");
+
+console.log(error);
+
+return;
+
+}
+
+
+
+alert("Booking cancelled");
+
+loadBookings();
+
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
