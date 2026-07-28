@@ -5,100 +5,102 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Kola's Gaming Cafe - Admin</title>
+<title>Kola's Gaming Cafe Admin</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 
-body {
-    font-family: Arial, sans-serif;
-    background:#f4f6f8;
-    padding:20px;
+body{
+font-family:Arial,sans-serif;
+background:#f4f6f8;
+padding:20px;
 }
 
-.container {
-    max-width:900px;
-    margin:auto;
-    background:white;
-    padding:25px;
-    border-radius:15px;
-    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
 }
 
-h1 {
-    text-align:center;
+h1,h2{
+text-align:center;
 }
 
-input, button {
-    padding:12px;
-    border-radius:8px;
-    border:1px solid #ccc;
-    font-size:16px;
+input,button{
+padding:10px;
+border-radius:8px;
+border:1px solid #ccc;
 }
 
-button {
-    cursor:pointer;
-    background:#161b22;
-    color:white;
+button{
+cursor:pointer;
+background:#161b22;
+color:white;
 }
 
-.login {
-    text-align:center;
+.login{
+text-align:center;
 }
 
-table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
+.summary{
+background:#f1f3f5;
+padding:15px;
+border-radius:10px;
+margin:20px 0;
+font-size:18px;
 }
 
-th, td {
-    border:1px solid #ddd;
-    padding:10px;
-    text-align:center;
+table{
+width:100%;
+border-collapse:collapse;
 }
 
-th {
-    background:#161b22;
-    color:white;
+th,td{
+border:1px solid #ddd;
+padding:10px;
+text-align:center;
 }
 
-.delete {
-    background:#d9534f;
+th{
+background:#161b22;
+color:white;
 }
 
-.summary {
-    margin-top:20px;
-    padding:15px;
-    background:#f1f3f5;
-    border-radius:10px;
-    font-size:18px;
+.whatsapp{
+background:#25D366;
+}
+
+.status{
+margin:3px;
+font-size:12px;
+}
+
+.cancel{
+background:#d9534f;
 }
 
 </style>
 
 </head>
 
-
 <body>
 
-
 <div class="container">
-
 
 <h1>🎮 Kola's Gaming Cafe</h1>
 
 
-<div class="login" id="loginBox">
+<div id="loginBox" class="login">
 
 <h3>Owner Login</h3>
 
-<input type="password" id="password" placeholder="Enter password">
+<input type="password" id="password" placeholder="Password">
 
-<button onclick="login()">
-Login
-</button>
+<button onclick="login()">Login</button>
 
 </div>
 
@@ -107,33 +109,48 @@ Login
 <div id="dashboard" style="display:none;">
 
 
-<h2>Bookings</h2>
-
-
 <div class="summary" id="summary">
 Loading...
 </div>
 
 
+<h2>Today's Bookings</h2>
+
+
 <table>
 
 <thead>
+<tr>
+<th>Time</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
 
+<tbody id="todayList"></tbody>
+
+</table>
+
+
+
+<h2>All Bookings</h2>
+
+
+<table>
+
+<thead>
 <tr>
 <th>Date</th>
 <th>Time</th>
 <th>Name</th>
 <th>Phone</th>
-<th>Action</th>
+<th>Status</th>
 </tr>
-
 </thead>
 
-
-<tbody id="bookingList">
-
-</tbody>
-
+<tbody id="allList"></tbody>
 
 </table>
 
@@ -156,7 +173,7 @@ const SUPABASE_KEY =
 "sb_publishable_jIkmH9FJEJ3ITWovdQvYmw_IDSkSeT2";
 
 
-const supabaseClient =
+const db =
 supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
@@ -171,11 +188,11 @@ const ADMIN_PASSWORD =
 
 function login(){
 
-const entered =
+let p =
 document.getElementById("password").value;
 
 
-if(entered === ADMIN_PASSWORD){
+if(p===ADMIN_PASSWORD){
 
 document.getElementById("loginBox").style.display="none";
 
@@ -195,24 +212,20 @@ alert("Wrong password");
 
 
 
-
 async function loadBookings(){
 
 
-const {data,error} =
-await supabaseClient
+const {data,error}=await db
 .from("bookings")
 .select("*")
-.order("booking_date",{ascending:true})
-.order("booking_time",{ascending:true});
+.order("booking_date")
+.order("booking_time");
 
 
 
 if(error){
 
-alert("Unable to load bookings");
-
-console.log(error);
+alert(error.message);
 
 return;
 
@@ -220,98 +233,152 @@ return;
 
 
 
-const table =
-document.getElementById("bookingList");
-
-
-table.innerHTML="";
-
-
-
-let total = 0;
+let today =
+new Date()
+.toISOString()
+.split("T")[0];
 
 
 
-data.forEach(booking=>{
-
-
-total += 150;
-
-
-let row =
-document.createElement("tr");
+let todayBookings =
+data.filter(x =>
+x.booking_date===today
+);
 
 
 
-row.innerHTML = `
+let revenue =
+todayBookings
+.filter(x =>
+x.status!=="Cancelled"
+)
+.length * 150;
 
-<td>${booking.booking_date}</td>
 
-<td>${booking.booking_time}</td>
 
-<td>${booking.customer_name}</td>
-
-<td>${booking.phone}</td>
-
-<td>
-<button class="delete"
-onclick="deleteBooking(${booking.id})">
-Delete
-</button>
-</td>
-
+document.getElementById("summary").innerHTML=
+`
+Today's bookings: <b>${todayBookings.length}</b><br>
+Today's expected revenue: <b>₹${revenue}</b>
 `;
 
 
 
-table.appendChild(row);
+let todayHTML="";
 
 
+todayBookings.forEach(b=>{
+
+
+todayHTML+=`
+
+<tr>
+
+<td>${b.booking_time}</td>
+
+<td>${b.customer_name}</td>
+
+<td>${b.phone}</td>
+
+<td>${b.status}</td>
+
+<td>
+
+<a class="whatsapp button"
+href="https://wa.me/91${b.phone}"
+target="_blank">
+WhatsApp
+</a>
+
+<br>
+
+<button onclick="updateStatus(${b.id},'Arrived')">
+Arrived
+</button>
+
+<button onclick="updateStatus(${b.id},'Playing')">
+Playing
+</button>
+
+<button onclick="updateStatus(${b.id},'Completed')">
+Done
+</button>
+
+<button class="cancel"
+onclick="updateStatus(${b.id},'Cancelled')">
+Cancel
+</button>
+
+
+</td>
+
+</tr>
+
+`;
 
 });
 
 
+document.getElementById("todayList").innerHTML=
+todayHTML || "<tr><td colspan='5'>No bookings today</td></tr>";
 
-document.getElementById("summary").innerHTML =
-`
-Total bookings: <b>${data.length}</b><br>
-Expected revenue: <b>₹${total}</b>
+
+
+let allHTML="";
+
+
+data.forEach(b=>{
+
+
+allHTML+=`
+
+<tr>
+
+<td>${b.booking_date}</td>
+
+<td>${b.booking_time}</td>
+
+<td>${b.customer_name}</td>
+
+<td>${b.phone}</td>
+
+<td>${b.status}</td>
+
+</tr>
+
 `;
+
+});
+
+
+document.getElementById("allList").innerHTML=
+allHTML;
+
 
 }
 
 
 
-
-async function deleteBooking(id){
-
-
-if(!confirm("Cancel this booking?"))
-return;
+async function updateStatus(id,status){
 
 
-
-const {error} =
-await supabaseClient
+const {error}=await db
 .from("bookings")
-.delete()
+.update({
+status:status
+})
 .eq("id",id);
 
 
 
 if(error){
 
-alert("Delete failed");
-
-console.log(error);
+alert(error.message);
 
 return;
 
 }
 
-
-
-alert("Booking cancelled");
 
 loadBookings();
 
